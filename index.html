@@ -102,6 +102,12 @@
     text-decoration: none;
     white-space: nowrap;
   }
+  nav.daynav a.nav-home {
+    color: #fff;
+    background: var(--blue);
+    font-weight: 500;
+    margin-right: 2px;
+  }
 
   main {
     max-width: 760px;
@@ -465,7 +471,7 @@ function render() {
           <div class="place-name">📍 ${p.name}</div>
           <div class="sighting-grid">
             ${p.sightings.map(s => `
-              <a class="sighting-card" href="${s.url}" target="_blank" rel="noopener">
+              <a class="sighting-card" href="${s.url}">
                 <span class="icon">${s.icon}</span>
                 <span class="body">
                   <span class="name">${s.name}</span>
@@ -481,10 +487,11 @@ function render() {
     </section>
   `).join('');
 
-  nav.innerHTML = days.map(d => `<a href="#day${d.n}">Day ${d.n}</a>`).join('') + `<a href="#todo-anchor">待補</a>`;
+  nav.innerHTML = `<a class="nav-home" href="https://maskywg.github.io/northeurope/北歐四國" target="_blank">← 主網頁</a>` +
+    days.map(d => `<a href="#day${d.n}">Day ${d.n}</a>`).join('') + `<a href="#todo-anchor">待補</a>`;
 
   document.getElementById('todoList').innerHTML = todoPosts.map(t =>
-    `<a href="${t.url}" target="_blank" rel="noopener">${t.label} ↗</a>`
+    `<a href="${t.url}">${t.label} ↗</a>`
   ).join('');
 }
 
