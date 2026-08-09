@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>沿途野鳥與野生動物觀察誌・北歐四國 15 日</title>
-<meta name="description" content="北歐四國 15 日行程沿途拍到的野鳥與野生動物紀錄，依行程 Day 排列，附原始 Facebook 貼文連結。">
+<title>沿途野生動物地圖・北歐四國 15 日</title>
+<meta name="description" content="北歐四國 15 日行程沿途拍到的野鳥與野生動物地圖，點標記看原始 Facebook 貼文。">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
 
@@ -17,485 +19,320 @@
     --hint: #a09890;
     --blue: #1a4a7a;
     --blue-light: #e8f0f8;
-    --blue-mid: #b8d0e8;
     --green: #2d6a4f;
-    --green-light: #e8f4ef;
     --amber: #a5691e;
     --amber-light: #f5ecdd;
-    --radius: 12px;
-    --radius-sm: 8px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
 
   body {
     font-family: 'Noto Sans TC', sans-serif;
     background: var(--bg);
     color: var(--text);
-    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
   }
 
   header {
     background: var(--blue);
     color: white;
-    padding: 2.8rem 1.5rem 2.2rem;
-    text-align: center;
+    padding: 0.9rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
   }
-
-  header .eyebrow {
-    font-size: 0.75rem;
-    letter-spacing: 0.15em;
-    opacity: 0.65;
-    margin-bottom: 0.6rem;
-  }
-
   header h1 {
     font-family: 'Playfair Display', serif;
-    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    font-size: clamp(1rem, 3vw, 1.3rem);
     font-weight: 600;
-    letter-spacing: 0.02em;
-    margin-bottom: 0.7rem;
+    flex: 1 1 auto;
+    min-width: 200px;
   }
-
-  header p {
-    font-size: 0.88rem;
-    opacity: 0.8;
-    max-width: 520px;
-    margin: 0 auto;
+  header h1 span {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    opacity: 0.65;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 400;
+    margin-bottom: 2px;
   }
-
   .back-link {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    margin-top: 1.2rem;
-    font-size: 0.8rem;
-    color: rgba(255,255,255,0.85);
+    font-size: 0.78rem;
+    color: #fff;
     text-decoration: none;
+    background: rgba(255,255,255,0.15);
     border: 1px solid rgba(255,255,255,0.35);
-    border-radius: 20px;
-    padding: 5px 14px;
+    border-radius: 18px;
+    padding: 6px 13px;
+    white-space: nowrap;
   }
-  .back-link:hover { background: rgba(255,255,255,0.12); }
+  .back-link:hover { background: rgba(255,255,255,0.28); }
 
-  nav.daynav {
-    position: sticky;
-    top: 0;
-    z-index: 20;
+  .daychips {
     background: var(--card);
     border-bottom: 1px solid var(--border);
-    padding: 0.6rem 0.8rem;
+    padding: 0.5rem 0.7rem;
     display: flex;
     gap: 6px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-  }
-  nav.daynav::-webkit-scrollbar { display: none; }
-  nav.daynav a {
     flex: 0 0 auto;
-    font-size: 0.75rem;
+  }
+  .daychips::-webkit-scrollbar { display: none; }
+  .daychips button {
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: 0.74rem;
     color: var(--blue);
     background: var(--blue-light);
+    border: none;
     border-radius: 16px;
-    padding: 5px 11px;
-    text-decoration: none;
+    padding: 5px 12px;
+    cursor: pointer;
     white-space: nowrap;
   }
-  nav.daynav a.nav-home {
-    color: #fff;
+  .daychips button.active {
     background: var(--blue);
+    color: #fff;
+  }
+  .daychips button.all {
+    background: var(--green);
+    color: #fff;
     font-weight: 500;
-    margin-right: 2px;
   }
 
-  main {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 1.6rem 1rem 3rem;
+  #map {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
   }
 
-  .intro {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem 1.2rem;
-    font-size: 0.88rem;
-    color: var(--muted);
-    margin-bottom: 1.8rem;
-  }
-  .intro b { color: var(--text); }
-
-  .day-block {
-    margin-bottom: 2.4rem;
-    scroll-margin-top: 60px;
-  }
-
-  .day-head {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 0.9rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--blue-mid);
-  }
-  .day-head .day-n {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.3rem;
-    color: var(--blue);
-    font-weight: 600;
-  }
-  .day-head .day-date {
-    font-size: 0.78rem;
-    color: var(--hint);
-  }
-  .day-head .day-route {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-left: auto;
-    text-align: right;
-  }
-
-  .place-group {
-    margin-bottom: 1.1rem;
-  }
-  .place-name {
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--green);
-    background: var(--green-light);
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
-    margin-bottom: 0.55rem;
-  }
-
-  .sighting-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: 10px;
-  }
-
-  .sighting-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.75rem 0.85rem;
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    text-decoration: none;
-    color: inherit;
-    transition: border-color .15s, transform .15s;
-  }
-  .sighting-card:hover {
-    border-color: var(--blue-mid);
-    transform: translateY(-1px);
-  }
-  .sighting-card .icon {
-    font-size: 1.5rem;
-    line-height: 1;
-    flex: 0 0 auto;
-  }
-  .sighting-card .body { flex: 1; min-width: 0; }
-  .sighting-card .name {
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: var(--text);
-    margin-bottom: 2px;
-  }
-  .sighting-card .en {
-    font-size: 0.72rem;
-    color: var(--hint);
-    font-style: italic;
-    margin-bottom: 4px;
-  }
-  .sighting-card .note {
-    font-size: 0.76rem;
-    color: var(--muted);
-  }
-  .sighting-card .fb-link {
-    font-size: 0.72rem;
-    color: var(--blue);
-    margin-top: 5px;
+  .leaflet-popup-content { margin: 10px 12px; font-family: 'Noto Sans TC', sans-serif; }
+  .popup-place { font-size: 0.72rem; color: var(--hint); margin-bottom: 3px; }
+  .popup-name { font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
+  .popup-en { font-size: 0.72rem; color: var(--hint); font-style: italic; margin-bottom: 5px; }
+  .popup-note { font-size: 0.8rem; color: var(--muted); margin-bottom: 7px; line-height: 1.5; }
+  .popup-link {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-  }
-
-  .todo-section {
-    margin-top: 2.4rem;
-    padding-top: 1.4rem;
-    border-top: 1px dashed var(--border);
-  }
-  .todo-section h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.05rem;
-    color: var(--amber);
-    margin-bottom: 0.5rem;
-  }
-  .todo-section p {
-    font-size: 0.82rem;
-    color: var(--muted);
-    margin-bottom: 0.8rem;
-  }
-  .todo-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .todo-list a {
     font-size: 0.78rem;
-    color: var(--amber);
-    background: var(--amber-light);
-    border-radius: 14px;
-    padding: 5px 12px;
+    color: #fff;
+    background: var(--blue);
     text-decoration: none;
+    padding: 5px 11px;
+    border-radius: 14px;
   }
+  .popup-more + .popup-more { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
 
   footer {
+    flex: 0 0 auto;
     text-align: center;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--hint);
-    padding: 1.5rem 1rem 2.5rem;
+    padding: 0.6rem 1rem;
+    background: var(--card);
+    border-top: 1px solid var(--border);
   }
   footer a { color: var(--blue); text-decoration: none; }
+
+  .todo-note {
+    font-size: 0.7rem;
+    color: var(--amber);
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="eyebrow">NORTHEUROPE · WILDLIFE LOG</div>
-  <h1>沿途野鳥與野生動物觀察誌</h1>
-  <p>北歐四國 15 日行程期間，一路從芬蘭湖畔、挪威峽灣到丹麥港邊，隨手按下快門留住的野鳥與動物身影。依行程 Day 順序整理，點卡片可回到原始 Facebook 貼文查看完整照片與留言。</p>
-  <a class="back-link" href="https://maskywg.github.io/northeurope/北歐四國" target="_blank">← 回北歐四國行程總覽</a>
+  <h1><span>NORTHEUROPE · WILDLIFE MAP</span>沿途野生動物地圖</h1>
+  <a class="back-link" href="https://maskywg.github.io/northeurope/北歐四國">← 回北歐四國行程總覽</a>
 </header>
 
-<nav class="daynav" id="daynav"></nav>
+<div class="daychips" id="daychips"></div>
 
-<main>
-  <div class="intro">
-    這趟旅程走的是觀光路線，卻意外撞見不少「原住民」——芬馬克高原上悠然踱步的馴鹿、蓋朗格峽灣邊教堂旁曬太陽的黃鵐、哥本哈根南港運河旁跳來跳去的喜鵲。<b>物種鑑定多為現場肉眼／照片比對，僅供參考，非嚴謹學術紀錄。</b>每則紀錄都附上原始貼文連結，可以看到完整照片與拍攝當下的留言互動。
-  </div>
-
-  <div id="content"></div>
-
-  <div class="todo-section">
-    <h2>📌 待補紀錄</h2>
-    <p>以下 4 則貼文因格式（Reel／影片）或 Facebook 讀取限制，暫時無法自動取得地點與物種資訊，先保留原始連結，之後有空再補上說明。</p>
-    <div class="todo-list" id="todoList"></div>
-  </div>
-</main>
+<div id="map"></div>
 
 <footer>
-  資料來源：Masky Wang 個人 Facebook 公開貼文・行程資料見 <a href="https://maskywg.github.io/northeurope/北歐四國" target="_blank">全覽北歐四國・北角日不落 15 日</a>
+  點地圖上的標記查看物種與原始 Facebook 貼文（同分頁開啟，瀏覽器上一頁可返回地圖）・
+  <span class="todo-note">4 則因格式限制暫無法定位</span>：
+  <a href="https://www.facebook.com/share/r/1BiLqsx59S/">Reel①</a>
+  <a href="https://www.facebook.com/share/v/1CkZrsiZkf/">影片</a>
+  <a href="https://www.facebook.com/share/p/19DoY2mYCD/">貼文①</a>
+  <a href="https://www.facebook.com/share/p/1Bbrm9j6UY/">貼文②</a>
 </footer>
 
 <script>
-const days = [
-  {
-    n: 2, date: "7/20", route: "斯德哥爾摩",
-    places: [
-      {
-        name: "Kornhamnstorg（近老城區 Gamla Stan）",
-        sightings: [
-          { icon: "🕊️", name: "紅嘴鷗（幼鳥）", en: "Black-headed Gull, juvenile", note: "老城廣場邊覓食的亞成鳥，羽色偏褐尚未換上成鳥的白灰羽", url: "https://www.facebook.com/share/p/1DH7PpH1r6/" },
-          { icon: "🕊️", name: "紅嘴鷗（繁殖羽）", en: "Black-headed Gull, breeding plumage", note: "推測同為 Kornhamnstorg 一帶所拍，可見深巧克力色頭罩的繁殖羽特徵", url: "https://www.facebook.com/share/p/1DYu8eEAkr/" },
-        ]
-      },
-      {
-        name: "Hälsans stig, Lötsjön & Råstasjön（近下榻飯店 Comfort Hotel Solna）",
-        sightings: [
-          { icon: "🐦‍⬛", name: "烏鶇（雄鳥）", en: "Eurasian Blackbird, male", note: "飯店附近的健行湖畔步道，傍晚散步時巧遇的全黑雄鳥、黃色鳥喙很好認", url: "https://www.facebook.com/share/p/198BMbLhWn/" },
-          { icon: "📍", name: "湖畔步道紀錄", en: "Hälsans stig Lötsjön & Råstasjön", note: "同一湖區的地點紀錄貼文，無特別標註鳥種", url: "https://www.facebook.com/share/p/19JDr8tX2L/" },
-        ]
-      },
-    ]
-  },
-  {
-    n: 3, date: "7/21", route: "斯德哥爾摩 → 赫爾辛基",
-    places: [
-      {
-        name: "瓦薩號戰艦博物館 Vasa Museum",
-        sightings: [
-          { icon: "🕊️", name: "歐亞海鷗", en: "Common Gull (Larus canus)", note: "博物館外海邊，同行友人打趣說「都沒看到展品」——原來忙著拍鳥去了", url: "https://www.facebook.com/share/p/1J8ZU6tkRU/" },
-        ]
-      },
-    ]
-  },
-  {
-    n: 4, date: "7/22", route: "赫爾辛基 → 羅凡聶米",
-    places: [
-      {
-        name: "頌歌中央圖書館 Oodi Library",
-        sightings: [
-          { icon: "🕊️", name: "銀鷗", en: "Herring Gull", note: "圖書館前廣場常客，公開貼文只用鳥種名當標題", url: "https://www.facebook.com/share/p/1PyFoduArv/" },
-        ]
-      },
-      {
-        name: "西貝流士公園 Sibelius Park",
-        sightings: [
-          { icon: "🪿", name: "白頰黑雁", en: "Barnacle Goose", note: "紀念公園草地上悠閒踱步的黑白雁", url: "https://www.facebook.com/share/p/1HBfLDeUkQ/" },
-        ]
-      },
-      {
-        name: "舊市場大廳 Vanha kauppahalli",
-        sightings: [
-          { icon: "🕊️", name: "黑背鷗（幼鳥）", en: "Great Black-backed Gull, juvenile", note: "市場旁的年輕海鷗，體型明顯比一般海鷗大上一號", url: "https://www.facebook.com/share/p/1Bg1AzKpcd/" },
-        ]
-      },
-    ]
-  },
-  {
-    n: 5, date: "7/23", route: "羅凡聶米 → 伊瓦洛",
-    places: [
-      {
-        name: "Hotelli Ivalo",
-        sightings: [
-          { icon: "🐇", name: "歐洲野兔", en: "European Hare", note: "飯店周邊草地現身，體型碩大、豎耳將近 80 公分高，只能遠觀不能靠近", url: "https://www.facebook.com/share/p/187S4T6gY1/" },
-          { icon: "🐇", name: "歐洲野兔（2）", en: "European Hare", note: "同一批野兔的第二段紀錄，有留言問「會怕人嗎」，答案是會", url: "https://www.facebook.com/share/p/185ifg4M6m/" },
-        ]
-      },
-    ]
-  },
-  {
-    n: 6, date: "7/24", route: "伊瓦洛 → 北角",
-    places: [
-      {
-        name: "Sápmi Park, Karasjok（馴鹿農場）",
-        sightings: [
-          { icon: "🦌", name: "馴鹿", en: "Reindeer", note: "薩米族馴鹿農場近距離接觸，行程表上的★景點之一", url: "https://www.facebook.com/share/p/1F8TF74xFP/" },
-        ]
-      },
-      {
-        name: "Scandic Nordkapp",
-        sightings: [
-          { icon: "🕊️", name: "歐亞海鷗（亞成鳥）", en: "Common Gull, immature", note: "北角旅館周邊，友人靠飛行姿態與嘴形協助辨識", url: "https://www.facebook.com/share/p/18z8QSga1P/" },
-          { icon: "🐤", name: "黃鶺鴒", en: "Yellow Wagtail", note: "同一晚在旅館附近拍到的另一種小型鳥", url: "https://www.facebook.com/share/p/17WxekU7FL/" },
-        ]
-      },
-    ]
-  },
-  {
-    n: 7, date: "7/25", route: "北角 → 阿爾塔 → 奧斯陸",
-    places: [
-      {
-        name: "阿爾塔 Alta",
-        sightings: [
-          { icon: "🦌", name: "野放馴鹿", en: "Wild / Free-ranging Reindeer", note: "史前岩畫博物館周邊，非農場圈養、路邊自由活動的馴鹿群", url: "https://www.facebook.com/share/p/1HTDsAcAUk/" },
-        ]
-      },
-    ]
-  },
-  {
-    n: 8, date: "7/26", route: "奧斯陸 → 里耳哈默 → 蓋朗格峽灣",
-    places: [
-      {
-        name: "維吉蘭雕塑公園 Vigeland Sculpture Park, Oslo",
-        sightings: [
-          { icon: "🐦", name: "挪威家麻雀", en: "House Sparrow", note: "雕塑公園裡最不怕人的常駐居民", url: "https://www.facebook.com/share/p/1BjcdzyxJA/" },
-          { icon: "🦆", name: "綠頭鴨（雌）", en: "Mallard, female", note: "公園水池邊悠游的雌鴨，褐色斑紋羽色與雄鴨的亮綠頭截然不同", url: "https://www.facebook.com/share/p/1LLnpsAiNi/" },
-        ]
-      },
-      {
-        name: "蓋朗格 Geiranger 一帶（Fossevandring 步道／Hotel Geiranger／Geiranger Kyrkje／Geiranger Camping）",
-        sightings: [
-          { icon: "🐤", name: "黃鵐", en: "Yellowhammer", note: "Fossevandring 瀑布健行步道旁的鳴唱聲把牠引來鏡頭前", url: "https://www.facebook.com/share/p/1CH8C2aSz1/" },
-          { icon: "🕊️", name: "歐亞海鷗", en: "Common Gull", note: "飯店窗外峽灣景色裡的常客", url: "https://www.facebook.com/share/p/1chLDT42PD/" },
-          { icon: "🐤", name: "黃鵐", en: "Yellowhammer", note: "Geiranger Kyrkje 蓋朗格白色小教堂旁再次現身", url: "https://www.facebook.com/share/p/18iiBo5F85/" },
-          { icon: "🐤", name: "白鶺鴒", en: "White Wagtail", note: "教堂旁草地，友人留言笑說「走路速度奇快」", url: "https://www.facebook.com/share/p/1DLEXzmG3v/" },
-          { icon: "🐦‍⬛", name: "寒鴉", en: "Western Jackdaw", note: "飯店周邊景觀照裡順手拍到的寒鴉", url: "https://www.facebook.com/share/p/1FPkZejm9G/" },
-          { icon: "🐦", name: "蠣鴴", en: "Eurasian Oystercatcher", note: "露營區附近，橘紅色長喙很好辨認", url: "https://www.facebook.com/share/p/1BakuraFif/" },
-          { icon: "🐦‍⬛", name: "烏鶇（雌幼鳥）", en: "Eurasian Blackbird, female/juvenile", note: "貼文未標註確切地點，依前後紀錄推測同為蓋朗格一帶所拍", url: "https://www.facebook.com/share/p/1DuN5oLurz/" },
-        ]
-      },
-    ]
-  },
-  {
-    n: 9, date: "7/27", route: "蓋朗格峽灣 → 布里斯達冰河 → 索娜峽灣",
-    places: [
-      {
-        name: "Lærdal Hotel",
-        sightings: [
-          { icon: "🐤", name: "白鶺鴒", en: "White Wagtail", note: "索娜峽灣區旅館前的常見小鳥", url: "https://www.facebook.com/share/p/1DYWwsaxUZ/" },
-        ]
-      },
-    ]
-  },
-  {
-    n: 12, date: "7/30", route: "希茨海爾斯 → 歐登西",
-    places: [
-      {
-        name: "歐登西 Odense（Scandic Odense）",
-        sightings: [
-          { icon: "🐦‍⬛", name: "烏鶇（雌鳥）", en: "Eurasian Blackbird, female", note: "有人留言問是不是在 long stay，回答「不算啦 繞一圈」", url: "https://www.facebook.com/share/p/1Cgg5vt2RU/" },
-          { icon: "🐦‍⬛", name: "烏鶇", en: "Eurasian Blackbird", note: "童話小鎮街頭再遇烏鶇", url: "https://www.facebook.com/share/p/19AnvjuQ5Z/" },
-        ]
-      },
-    ]
-  },
-  {
-    n: 13, date: "7/31", route: "歐登西 → 螺旋觀景塔 → 哥本哈根",
-    places: [
-      {
-        name: "Sydhavnen, København（近 Scandic Sydhavnen）",
-        sightings: [
-          { icon: "🐦‍⬛", name: "寒鴉", en: "Western Jackdaw", note: "南港運河邊，哥本哈根市區裡意外常見的野鳥", url: "https://www.facebook.com/share/p/18ktpfvQ8S/" },
-          { icon: "🐦‍⬛", name: "喜鵲", en: "Eurasian Magpie", note: "黑白對比分明的羽色，在港邊步道跳來跳去", url: "https://www.facebook.com/share/p/19CgSfd6dz/" },
-          { icon: "🐦‍⬛", name: "烏鶇（雌鳥）", en: "Eurasian Blackbird, female", note: "行程尾聲，港區再度捕捉到烏鶇身影", url: "https://www.facebook.com/share/p/1BiYWu44L2/" },
-        ]
-      },
-    ]
-  },
+// 沿途野鳥／野生動物觀察紀錄，依行程 Day 分組
+const dayData = [
+  { n: 2, date: "7/20", route: "斯德哥爾摩", spots: [
+    { name: "Kornhamnstorg（近老城區）", lat: 59.3235, lon: 18.0722, items: [
+      { label: "紅嘴鷗（幼鳥）", en: "Black-headed Gull, juvenile", note: "老城廣場邊覓食的亞成鳥", u: "https://www.facebook.com/share/p/1DH7PpH1r6/" },
+      { label: "紅嘴鷗（繁殖羽）", en: "Black-headed Gull, breeding plumage", note: "深巧克力色頭罩的繁殖羽", u: "https://www.facebook.com/share/p/1DYu8eEAkr/" },
+    ]},
+    { name: "Hälsans stig, Lötsjön & Råstasjön", lat: 59.3697, lon: 17.9862, items: [
+      { label: "烏鶇（雄鳥）", en: "Eurasian Blackbird, male", note: "飯店附近湖畔步道所見", u: "https://www.facebook.com/share/p/198BMbLhWn/" },
+      { label: "湖畔步道紀錄", en: "", note: "同一湖區的地點紀錄", u: "https://www.facebook.com/share/p/19JDr8tX2L/" },
+    ]},
+  ]},
+  { n: 3, date: "7/21", route: "斯德哥爾摩→赫爾辛基", spots: [
+    { name: "瓦薩號戰艦博物館 Vasa Museum", lat: 59.3280, lon: 18.0915, items: [
+      { label: "歐亞海鷗", en: "Common Gull (Larus canus)", note: "博物館外海邊", u: "https://www.facebook.com/share/p/1J8ZU6tkRU/" },
+    ]},
+  ]},
+  { n: 4, date: "7/22", route: "赫爾辛基→羅凡聶米", spots: [
+    { name: "頌歌中央圖書館 Oodi", lat: 60.1737, lon: 24.9378, items: [
+      { label: "銀鷗", en: "Herring Gull", note: "圖書館前廣場常客", u: "https://www.facebook.com/share/p/1PyFoduArv/" },
+    ]},
+    { name: "西貝流士公園 Sibelius Park", lat: 60.1816, lon: 24.9220, items: [
+      { label: "白頰黑雁", en: "Barnacle Goose", note: "公園草地上悠閒踱步", u: "https://www.facebook.com/share/p/1HBfLDeUkQ/" },
+    ]},
+    { name: "舊市場大廳 Vanha kauppahalli", lat: 60.1663, lon: 24.9563, items: [
+      { label: "黑背鷗（幼鳥）", en: "Great Black-backed Gull, juvenile", note: "市場旁的年輕海鷗", u: "https://www.facebook.com/share/p/1Bg1AzKpcd/" },
+    ]},
+  ]},
+  { n: 5, date: "7/23", route: "羅凡聶米→伊瓦洛", spots: [
+    { name: "Hotelli Ivalo", lat: 68.6570, lon: 27.5417, items: [
+      { label: "歐洲野兔", en: "European Hare", note: "飯店周邊草地現身，耳朵含身高近 80 公分", u: "https://www.facebook.com/share/p/187S4T6gY1/" },
+      { label: "歐洲野兔（2）", en: "European Hare", note: "同一批野兔的第二段紀錄", u: "https://www.facebook.com/share/p/185ifg4M6m/" },
+    ]},
+  ]},
+  { n: 6, date: "7/24", route: "伊瓦洛→北角", spots: [
+    { name: "Sápmi Park, Karasjok（馴鹿農場）", lat: 69.5058, lon: 25.4687, items: [
+      { label: "馴鹿", en: "Reindeer", note: "薩米族馴鹿農場近距離接觸", u: "https://www.facebook.com/share/p/1F8TF74xFP/" },
+    ]},
+    { name: "Scandic Nordkapp", lat: 70.9821, lon: 25.9704, items: [
+      { label: "歐亞海鷗（亞成鳥）", en: "Common Gull, immature", note: "北角旅館周邊", u: "https://www.facebook.com/share/p/18z8QSga1P/" },
+      { label: "黃鶺鴒", en: "Yellow Wagtail", note: "同一晚在旅館附近拍到", u: "https://www.facebook.com/share/p/17WxekU7FL/" },
+    ]},
+  ]},
+  { n: 7, date: "7/25", route: "北角→阿爾塔→奧斯陸", spots: [
+    { name: "阿爾塔 Alta", lat: 69.9689, lon: 23.2716, items: [
+      { label: "野放馴鹿", en: "Wild / Free-ranging Reindeer", note: "史前岩畫博物館周邊路邊自由活動的馴鹿群", u: "https://www.facebook.com/share/p/1HTDsAcAUk/" },
+    ]},
+  ]},
+  { n: 8, date: "7/26", route: "奧斯陸→里耳哈默→蓋朗格峽灣", spots: [
+    { name: "維吉蘭雕塑公園 Vigeland Park", lat: 59.9264, lon: 10.6981, items: [
+      { label: "挪威家麻雀", en: "House Sparrow", note: "雕塑公園裡最不怕人的常駐居民", u: "https://www.facebook.com/share/p/1BjcdzyxJA/" },
+      { label: "綠頭鴨（雌）", en: "Mallard, female", note: "公園水池邊悠游的雌鴨", u: "https://www.facebook.com/share/p/1LLnpsAiNi/" },
+    ]},
+    { name: "Fossevandring 步道", lat: 62.0996, lon: 7.2028, items: [
+      { label: "黃鵐", en: "Yellowhammer", note: "瀑布健行步道旁的鳴唱聲把牠引來鏡頭前", u: "https://www.facebook.com/share/p/1CH8C2aSz1/" },
+    ]},
+    { name: "Hotel Geiranger", lat: 62.1006, lon: 7.2062, items: [
+      { label: "歐亞海鷗", en: "Common Gull", note: "飯店窗外峽灣景色裡的常客", u: "https://www.facebook.com/share/p/1chLDT42PD/" },
+      { label: "寒鴉", en: "Western Jackdaw", note: "飯店周邊景觀照裡順手拍到", u: "https://www.facebook.com/share/p/1FPkZejm9G/" },
+    ]},
+    { name: "Geiranger Kyrkje", lat: 62.1013, lon: 7.2074, items: [
+      { label: "黃鵐", en: "Yellowhammer", note: "蓋朗格白色小教堂旁再次現身", u: "https://www.facebook.com/share/p/18iiBo5F85/" },
+      { label: "白鶺鴒", en: "White Wagtail", note: "教堂旁草地，走路速度奇快", u: "https://www.facebook.com/share/p/1DLEXzmG3v/" },
+    ]},
+    { name: "Geiranger Camping", lat: 62.0985, lon: 7.1998, items: [
+      { label: "蠣鴴", en: "Eurasian Oystercatcher", note: "露營區附近，橘紅色長喙很好辨認", u: "https://www.facebook.com/share/p/1BakuraFif/" },
+    ]},
+    { name: "蓋朗格一帶（地點未標註）", lat: 62.1000, lon: 7.2040, items: [
+      { label: "烏鶇（雌幼鳥）", en: "Eurasian Blackbird, female/juvenile", note: "貼文未標註確切地點，依前後紀錄推測同為蓋朗格一帶", u: "https://www.facebook.com/share/p/1DuN5oLurz/" },
+    ]},
+  ]},
+  { n: 9, date: "7/27", route: "蓋朗格峽灣→布里斯達冰河→索娜峽灣", spots: [
+    { name: "Lærdal Hotel", lat: 61.1000, lon: 7.4833, items: [
+      { label: "白鶺鴒", en: "White Wagtail", note: "索娜峽灣區旅館前的常見小鳥", u: "https://www.facebook.com/share/p/1DYWwsaxUZ/" },
+    ]},
+  ]},
+  { n: 12, date: "7/30", route: "希茨海爾斯→歐登西", spots: [
+    { name: "Scandic Odense／歐登西市區", lat: 55.3932, lon: 10.3876, items: [
+      { label: "烏鶇（雌鳥）", en: "Eurasian Blackbird, female", note: "有人留言問是不是在 long stay", u: "https://www.facebook.com/share/p/1Cgg5vt2RU/" },
+      { label: "烏鶇", en: "Eurasian Blackbird", note: "童話小鎮街頭再遇烏鶇", u: "https://www.facebook.com/share/p/19AnvjuQ5Z/" },
+    ]},
+  ]},
+  { n: 13, date: "7/31", route: "歐登西→哥本哈根", spots: [
+    { name: "Sydhavnen, København", lat: 55.6558, lon: 12.5456, items: [
+      { label: "寒鴉", en: "Western Jackdaw", note: "南港運河邊，市區裡意外常見的野鳥", u: "https://www.facebook.com/share/p/18ktpfvQ8S/" },
+      { label: "喜鵲", en: "Eurasian Magpie", note: "黑白對比分明的羽色", u: "https://www.facebook.com/share/p/19CgSfd6dz/" },
+      { label: "烏鶇（雌鳥）", en: "Eurasian Blackbird, female", note: "行程尾聲，港區再度捕捉到烏鶇身影", u: "https://www.facebook.com/share/p/1BiYWu44L2/" },
+    ]},
+  ]},
 ];
 
-const todoPosts = [
-  { label: "Reel 影片紀錄", url: "https://www.facebook.com/share/r/1BiLqsx59S/" },
-  { label: "影片紀錄", url: "https://www.facebook.com/share/v/1CkZrsiZkf/" },
-  { label: "貼文（待補地點）", url: "https://www.facebook.com/share/p/19DoY2mYCD/" },
-  { label: "貼文（待補地點）", url: "https://www.facebook.com/share/p/1Bbrm9j6UY/" },
-];
+const map = L.map('map', { scrollWheelZoom: true });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
 
-function render() {
-  const content = document.getElementById('content');
-  const nav = document.getElementById('daynav');
-  content.innerHTML = days.map(d => `
-    <section class="day-block" id="day${d.n}">
-      <div class="day-head">
-        <span class="day-n">Day ${d.n}</span>
-        <span class="day-date">${d.date}</span>
-        <span class="day-route">${d.route}</span>
+const dayLayers = {};
+const allMarkers = [];
+
+dayData.forEach(day => {
+  const group = L.layerGroup();
+  day.spots.forEach(spot => {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="background:#2d6a4f;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45)">🐦</div>`,
+      iconSize: [28, 28], iconAnchor: [14, 14]
+    });
+    const popupHtml = spot.items.map(it => `
+      <div class="popup-more">
+        <div class="popup-name">${it.label}</div>
+        ${it.en ? `<div class="popup-en">${it.en}</div>` : ''}
+        ${it.note ? `<div class="popup-note">${it.note}</div>` : ''}
+        <a class="popup-link" href="${it.u}">查看 FB 貼文 ↗</a>
       </div>
-      ${d.places.map(p => `
-        <div class="place-group">
-          <div class="place-name">📍 ${p.name}</div>
-          <div class="sighting-grid">
-            ${p.sightings.map(s => `
-              <a class="sighting-card" href="${s.url}">
-                <span class="icon">${s.icon}</span>
-                <span class="body">
-                  <span class="name">${s.name}</span>
-                  <span class="en">${s.en}</span>
-                  <span class="note">${s.note}</span>
-                  <span class="fb-link">查看原始貼文 ↗</span>
-                </span>
-              </a>
-            `).join('')}
-          </div>
-        </div>
-      `).join('')}
-    </section>
-  `).join('');
+    `).join('');
+    const marker = L.marker([spot.lat, spot.lon], { icon }).bindPopup(
+      `<div class="popup-place">Day ${day.n}・${day.date}・${spot.name}</div>${popupHtml}`
+    );
+    marker.addTo(group);
+    allMarkers.push(marker);
+  });
+  dayLayers[day.n] = group;
+  group.addTo(map);
+});
 
-  nav.innerHTML = `<a class="nav-home" href="https://maskywg.github.io/northeurope/北歐四國" target="_blank">← 主網頁</a>` +
-    days.map(d => `<a href="#day${d.n}">Day ${d.n}</a>`).join('') + `<a href="#todo-anchor">待補</a>`;
+map.fitBounds(L.featureGroup(allMarkers).getBounds(), { padding: [30, 30] });
 
-  document.getElementById('todoList').innerHTML = todoPosts.map(t =>
-    `<a href="${t.url}">${t.label} ↗</a>`
-  ).join('');
+// Day 篩選按鈕
+const chipsEl = document.getElementById('daychips');
+let activeDay = 'all';
+
+function setActive(n) {
+  activeDay = n;
+  Object.keys(dayLayers).forEach(k => {
+    if (n === 'all' || String(k) === String(n)) {
+      map.addLayer(dayLayers[k]);
+    } else {
+      map.removeLayer(dayLayers[k]);
+    }
+  });
+  document.querySelectorAll('.daychips button').forEach(b => {
+    b.classList.toggle('active', b.dataset.day === String(n));
+  });
+  if (n === 'all') {
+    map.fitBounds(L.featureGroup(allMarkers).getBounds(), { padding: [30, 30] });
+  } else {
+    const day = dayData.find(d => d.n === n);
+    const dayMarkers = allMarkers.filter(m => day.spots.some(s => s.lat === m.getLatLng().lat && s.lon === m.getLatLng().lng));
+    if (dayMarkers.length === 1) {
+      map.setView(dayMarkers[0].getLatLng(), 13);
+    } else {
+      map.fitBounds(L.featureGroup(dayMarkers).getBounds(), { padding: [40, 40] });
+    }
+  }
 }
 
-render();
+let chipsHtml = `<button class="all active" data-day="all" onclick="setActive('all')">全部</button>`;
+dayData.forEach(d => {
+  chipsHtml += `<button data-day="${d.n}" onclick="setActive(${d.n})">Day ${d.n}</button>`;
+});
+chipsEl.innerHTML = chipsHtml;
 </script>
 
 </body>
