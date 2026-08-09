@@ -7,6 +7,7 @@
 <meta name="description" content="北歐四國 15 日行程沿途拍到的野鳥與野生動物地圖，點標記看原始 Facebook 貼文。">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
 
@@ -267,6 +268,7 @@ const map = L.map('map', { scrollWheelZoom: true });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
+map.invalidateSize();
 
 const dayLayers = {};
 const allMarkers = [];
@@ -299,6 +301,34 @@ dayData.forEach(day => {
 
 map.fitBounds(L.featureGroup(allMarkers).getBounds(), { padding: [30, 30] });
 
+// 移動路線箭頭：依 Day → 地點 造訪順序連接
+const orderedPlaces = [];
+dayData.forEach(day => {
+  day.spots.forEach(spot => {
+    orderedPlaces.push({ lat: spot.lat, lon: spot.lon });
+  });
+});
+
+let routeLine = null, routeDecorator = null;
+function updateRoute(points) {
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  if (routeDecorator) { map.removeLayer(routeDecorator); routeDecorator = null; }
+  if (!points || points.length < 2) return;
+  const latlngs = points.map(p => [p.lat, p.lon]);
+  routeLine = L.polyline(latlngs, {
+    color: '#1a4a7a', weight: 3, opacity: 0.55, dashArray: '1 8', lineCap: 'round'
+  }).addTo(map);
+  routeDecorator = L.polylineDecorator(routeLine, {
+    patterns: [
+      { offset: '6%', repeat: '10%', symbol: L.Symbol.arrowHead({
+        pixelSize: 10, polygon: false,
+        pathOptions: { stroke: true, weight: 2.5, color: '#1a4a7a', opacity: 0.85 }
+      }) }
+    ]
+  }).addTo(map);
+}
+updateRoute(orderedPlaces);
+
 // Day 篩選按鈕
 const chipsEl = document.getElementById('daychips');
 let activeDay = 'all';
@@ -317,6 +347,7 @@ function setActive(n) {
   });
   if (n === 'all') {
     map.fitBounds(L.featureGroup(allMarkers).getBounds(), { padding: [30, 30] });
+    updateRoute(orderedPlaces);
   } else {
     const day = dayData.find(d => d.n === n);
     const dayMarkers = allMarkers.filter(m => day.spots.some(s => s.lat === m.getLatLng().lat && s.lon === m.getLatLng().lng));
@@ -325,6 +356,7 @@ function setActive(n) {
     } else {
       map.fitBounds(L.featureGroup(dayMarkers).getBounds(), { padding: [40, 40] });
     }
+    updateRoute(day.spots.map(s => ({ lat: s.lat, lon: s.lon })));
   }
 }
 
@@ -333,6 +365,20 @@ dayData.forEach(d => {
   chipsHtml += `<button data-day="${d.n}" onclick="setActive(${d.n})">Day ${d.n}</button>`;
 });
 chipsEl.innerHTML = chipsHtml;
+
+// 部分瀏覽器在 flex 版面完成排版前就初始化地圖，容器尺寸會量到 0，
+// 導致 fitBounds 算出異常的縮放層級；延遲一個 tick 後重新校正。
+function resyncMap() {
+  map.invalidateSize();
+  if (activeDay === 'all') {
+    map.fitBounds(L.featureGroup(allMarkers).getBounds(), { padding: [30, 30] });
+  } else {
+    setActive(activeDay);
+  }
+}
+setTimeout(resyncMap, 100);
+setTimeout(resyncMap, 500);
+window.addEventListener('load', resyncMap);
 </script>
 
 </body>
