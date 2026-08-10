@@ -122,12 +122,16 @@
   .popup-name { font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
   .popup-en { font-size: 0.72rem; color: var(--hint); font-style: italic; margin-bottom: 5px; }
   .popup-note { font-size: 0.8rem; color: var(--muted); margin-bottom: 7px; line-height: 1.5; }
-  .popup-link {
+  .popup-link,
+  .popup-link:link,
+  .popup-link:visited,
+  .popup-link:hover,
+  .popup-link:active {
     display: inline-flex;
     align-items: center;
     gap: 3px;
     font-size: 0.78rem;
-    color: #fff;
+    color: #fff !important;
     background: var(--blue);
     text-decoration: none;
     padding: 5px 11px;
